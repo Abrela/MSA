@@ -2,8 +2,8 @@ function [] = CLUSTALoutput(multipleAlignment, starHeader, starSeq, max)
 
 for j = 1:length(multipleAlignment)
    
-    if isequal(starSeq, multipleAlignment(j).sequence)
-        disp(''); % wyœwietlane puste pole, bo w tym przypadku fukncja ma omijac porownanie z "gwiazda"
+    if isequal(starHeader, multipleAlignment(j).header)
+      % wyœwietlane puste pole, bo w tym przypadku fukncja ma omijac porownanie z "gwiazda"
     else
     line = '';
     for i = 1:max
@@ -17,8 +17,8 @@ for j = 1:length(multipleAlignment)
     end
     end
      
-    if isequal(starSeq, multipleAlignment(j).sequence)
-        disp(''); % wyœwietlane puste pole, bo w tym przypadku fukncja ma omijac porownanie z "gwiazda"
+    if isequal(starHeader, multipleAlignment(j).header)
+
     else
        fprintf('\n');
        fprintf('%.25s \t %.60s \t %d \n',starHeader, starSeq, max);

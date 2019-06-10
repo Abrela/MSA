@@ -29,66 +29,61 @@ maxScoreRow = max(scoreRow);
 [coordinateRowX, coordinateRowY] = find(maxScoreRow == scoreRow);
   
 amountSeq = length(fastaStruct); %ilosc sekwencji
-seq = fastaStruct(coordinateRowX).sequence; %centrum gwiazdy przypisane do zmiennej 
+star = fastaStruct(coordinateRowX(1,1)).sequence; %centrum gwiazdy przypisane do zmiennej 
 
- alignment = cell(amountSeq-1); %cell w której beda zapisywane dopasowania, oprócz star
- star = ''; %zmienna do zapisu centrum gwiazdy
 
+ A = cell(amountSeq-1); %cell w której beda zapisywane dopasowania, oprócz star
+ alignment = struct('header', {}, 'sequence', {}); %zapisane sekwencje bez star
+
+ fastaStruct(coordinateRowX(1,1)).sequence = [];
+ for i = 1:length(fastaStruct)
+     if isempty(fastaStruct(i).sequence) == 1
+     else
+            A{i,1} = fastaStruct(i).sequence;
+            alignment1 = struct( 'header', '', 'sequence', A{i,1});
+            disp("Alinment1: " + alignment1.sequence);
+            alignment = [alignment; alignment1];
+     end
+ end
+ 
+ 
 %multiple alignment
-for j = 1:(amountSeq)
+for j = 1:length(alignment)
     
-    if isequal(seq, fastaStruct(j).sequence)
-
-    else
       [ mNW, matrixSize, bias, vertical, horizontal ]= ...
-      matrixScore(seq, fastaStruct(j).sequence, match, mismatch, gap);
+      matrixScore(star, alignment(j).sequence, match, mismatch, gap);
       [pathOut, identityOut, gapsOut, s1Out, s2Out, lengthAlignmentOut, scoreOut] = ...
-      matchPath(matrixSize, bias, vertical, horizontal, seq, fastaStruct(j).sequence, match, mismatch, gap, mNW );
-      alignment{j,1} = s2Out;
-      star = s1Out;
-
-      if j > 2 %petla uruchamiana dopiero od trzeciej iteracji
-        m = length(alignment);
-        disp("M: " + m);
-      if m > 1 
-          seq1 = star;
-          disp("Seq1: " + seq1);
-          seq2 = alignment{m-1,1};
-          disp("Seq2: " + seq2);
-          seqTemp = '';
-          
-           if length(seq1) > length(seq2) %jeœli seq2 krótsze od centrum gwiazdy to wyrównujemy d³ugoœæ obu 
-                 while length(seq1) ~= length(seq2)
-                     if length(seq1) > length(seq2)
-                     seq2 = strcat(seq2, '-');
-                     end
-                 end
-           end
+      matchPath(matrixSize, bias, vertical, horizontal, star, alignment(j).sequence, match, mismatch, gap, mNW );
+      
+      alignment(j).sequence = s2Out;
+      star = s1Out; %Nadpisywanie centrum gwiazdy
+      
+      
+     if j > 1 %petla uruchamiana dopiero od drugiej iteracji  
+       for m = 1:length(alignment)-1
+           seq1Star = star;
+           seq2 = alignment(m).sequence;
            
-          for k = 1:length(seq1)
-              disp("K: " + k);
-                 if(seq1(k) == '-')
-                    seqTemp = insertBefore(seq2,seq2(k),'-');
-                    disp("SeqTemp: " + seqTemp);
-                 end
-          end
-          alignment{m-1,1} = seqTemp;
-          disp("Alignment{}: " + alignment{m-1,1});
-          m = m-1;
-      end
-      end       
-    end
+           
+          [ mNW, matrixSize, bias, vertical, horizontal ]= ...
+          matrixScore(seq1Star, seq2, match, mismatch, gap);
+          [pathOut, identityOut, gapsOut, s1Out, s2Out, lengthAlignmentOut, scoreOut] = ...
+          matchPath(matrixSize, bias, vertical, horizontal, seq1Star, seq2, match, mismatch, gap, mNW );
+  
+           alignment(m).sequence = s2Out;
 
+       end
+     end   
 end
 
-for i = 1:length(alignment)
+for i = 2:length(alignment)+1
     
-    fastaStruct(i).sequence = alignment{i,1};
+    fastaStruct(i).sequence = alignment(i-1).sequence;
     
 end
 
 fastaStruct(coordinateRowX(1,1)).sequence = star;
-
+ 
 A = [];
 for i = 1:length(scoreRow)
     
@@ -97,7 +92,6 @@ A=[A; a];
 
 end
 
-%multiple alignment
 for i = 1:(length(scoreRow))
  
     while length(fastaStruct(i).sequence) ~= max(A)
