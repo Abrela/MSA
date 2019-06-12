@@ -29,19 +29,23 @@ maxScoreRow = max(scoreRow);
 [coordinateRowX, coordinateRowY] = find(maxScoreRow == scoreRow);
   
 amountSeq = length(fastaStruct); %ilosc sekwencji
-star = fastaStruct(coordinateRowX(1,1)).sequence; %centrum gwiazdy przypisane do zmiennej 
+star = fastaStruct(coordinateRowX(1,1)).sequence; %centrum gwiazdy przypisane do zmiennej
+starHeader = fastaStruct(coordinateRowX(1,1)).header; 
 
 
  A = cell(amountSeq-1); %cell w której beda zapisywane dopasowania, oprócz star
+ B = cell(amountSeq-1);
  alignment = struct('header', {}, 'sequence', {}); %zapisane sekwencje bez star
 
+ %storzenie struktury dla sekwencji bez centrum, dla u³atwienia wykonywania
+ %dopasowañ w pêtli for
  fastaStruct(coordinateRowX(1,1)).sequence = [];
  for i = 1:length(fastaStruct)
      if isempty(fastaStruct(i).sequence) == 1
      else
             A{i,1} = fastaStruct(i).sequence;
-            alignment1 = struct( 'header', '', 'sequence', A{i,1});
-            disp("Alinment1: " + alignment1.sequence);
+            B{i,1} = fastaStruct(i).header;
+            alignment1 = struct( 'header', B{i,1}, 'sequence', A{i,1});
             alignment = [alignment; alignment1];
      end
  end
@@ -76,14 +80,23 @@ for j = 1:length(alignment)
      end   
 end
 
-for i = 2:length(alignment)+1
-    
-    fastaStruct(i).sequence = alignment(i-1).sequence;
-    
+%przepisanie wszystkich sekwencji do wyjœciowej struktury
+for i = 1:length(alignment)
+    for j = 1:length(fastaStruct)
+        
+        if isequal(starHeader, fastaStruct(j).header)
+
+            fastaStruct(coordinateRowX(1,1)).sequence = star;
+
+        elseif isequal(fastaStruct(j).header, alignment(i).header)
+
+            fastaStruct(j).sequence = alignment(i).sequence;
+
+        end
+    end
 end
 
-fastaStruct(coordinateRowX(1,1)).sequence = star;
- 
+%znalezienie najd³u¿szej sekwencji, aby wyrównaæ do niej pozosta³e
 A = [];
 for i = 1:length(scoreRow)
     
@@ -92,6 +105,7 @@ A=[A; a];
 
 end
 
+%wyrównanie sekwencji
 for i = 1:(length(scoreRow))
  
     while length(fastaStruct(i).sequence) ~= max(A)
